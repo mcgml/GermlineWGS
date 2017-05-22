@@ -219,6 +219,7 @@ TMP_DIR=/state/partition1/tmpdir
 -o "$seqId"_"$sampleId".g.vcf \
 --genotyping_mode DISCOVERY \
 --emitRefConfidence GVCF \
+-nct 12 \
 -dt NONE
 
 ### QC ###
