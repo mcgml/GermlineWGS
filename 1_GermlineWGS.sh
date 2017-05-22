@@ -61,7 +61,7 @@ for fastqPair in $(ls *.fastq.gz | cut -d_ -f1-2 | sort | uniq); do
     O="$seqId"_"$sampleId"_"$laneId"_unaligned.bam \
     READ_GROUP_NAME="$seqId"_"$laneId"_"$sampleId" \
     SAMPLE_NAME="$sampleId" \
-    LIBRARY_NAME="$worklistId"_"$sampleId"_"$panel" \
+    LIBRARY_NAME="$worklistId"_"$sampleId" \
     PLATFORM_UNIT="$seqId"_"$laneId" \
     PLATFORM="ILLUMINA" \
     SEQUENCING_CENTER="WTCHG" \
@@ -82,7 +82,7 @@ for fastqPair in $(ls *.fastq.gz | cut -d_ -f1-2 | sort | uniq); do
     rm "$seqId"_"$sampleId"_"$laneId"_R1.fastq "$seqId"_"$sampleId"_"$laneId"_R2.fastq *_fastqc.zip *_fastqc.html
 
 done
-exit
+
 #merge lane bams
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar MergeSamFiles \
 $(ls "$seqId"_"$sampleId"_*_unaligned.bam | sed 's/^/I=/' | tr '\n' ' ') \
@@ -150,8 +150,7 @@ TMP_DIR=/state/partition1/tmpdir
 -known /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
 -I "$seqId"_"$sampleId"_rmdup.bam \
 -o "$seqId"_"$sampleId"_realign.intervals \
--L /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed \
--ip 150 \
+-nt 12 \
 -dt NONE
 
 #Realign around indels
@@ -165,66 +164,50 @@ TMP_DIR=/state/partition1/tmpdir
 -o "$seqId"_"$sampleId"_realigned.bam \
 -dt NONE
 
-if [ "$includeBQSR" = true ] ; then
+#Analyse patterns of covariation in the sequence dataset
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx6g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+-T BaseRecalibrator \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-knownSites /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
+-knownSites /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
+-knownSites /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
+-I "$seqId"_"$sampleId"_realigned.bam \
+-o "$seqId"_"$sampleId"_recal_data.table \
+-nct 12 \
+-dt NONE
 
-    echo "Performing BQSR ..."
+#Do a second pass to analyze covariation remaining after recalibration
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx6g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+-T BaseRecalibrator \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-knownSites /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
+-knownSites /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
+-knownSites /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
+-BQSR "$seqId"_"$sampleId"_recal_data.table \
+-I "$seqId"_"$sampleId"_realigned.bam \
+-o "$seqId"_"$sampleId"_post_recal_data.table \
+-nct 12 \
+-dt NONE
 
-    #Analyse patterns of covariation in the sequence dataset
-    /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx6g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
-    -T BaseRecalibrator \
-    -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
-    -knownSites /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
-    -knownSites /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
-    -knownSites /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
-    -I "$seqId"_"$sampleId"_realigned.bam \
-    -L /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed \
-    -o "$seqId"_"$sampleId"_recal_data.table \
-    -ip 150 \
-    -nct 12 \
-    -dt NONE
+#Generate BQSR plots
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx2g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+-T AnalyzeCovariates \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-before "$seqId"_"$sampleId"_recal_data.table \
+-after "$seqId"_"$sampleId"_post_recal_data.table \
+-plots "$seqId"_"$sampleId"_recalibration_plots.pdf \
+-csv "$seqId"_"$sampleId"_recalibration.csv \
+-dt NONE
 
-    #Do a second pass to analyze covariation remaining after recalibration
-    /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx6g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
-    -T BaseRecalibrator \
-    -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
-    -knownSites /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
-    -knownSites /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
-    -knownSites /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
-    -BQSR "$seqId"_"$sampleId"_recal_data.table \
-    -I "$seqId"_"$sampleId"_realigned.bam \
-    -L /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed \
-    -o "$seqId"_"$sampleId"_post_recal_data.table \
-    -nct 12 \
-    -ip 150 \
-    -dt NONE
-
-    #Generate BQSR plots
-    /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx2g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
-    -T AnalyzeCovariates \
-    -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
-    -before "$seqId"_"$sampleId"_recal_data.table \
-    -after "$seqId"_"$sampleId"_post_recal_data.table \
-    -plots "$seqId"_"$sampleId"_recalibration_plots.pdf \
-    -csv "$seqId"_"$sampleId"_recalibration.csv \
-    -dt NONE
-
-    #Apply the recalibration to your sequence data
-    /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx12g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
-    -T PrintReads \
-    -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
-    -I "$seqId"_"$sampleId"_realigned.bam \
-    -BQSR "$seqId"_"$sampleId"_recal_data.table \
-    -o "$seqId"_"$sampleId".bam \
-    -dt NONE
-
-else
-    
-    echo "Skipping BQSR ..."
-
-    cp "$seqId"_"$sampleId"_realigned.bam "$seqId"_"$sampleId".bam
-    cp "$seqId"_"$sampleId"_realigned.bai "$seqId"_"$sampleId".bai
-
-fi
+#Apply the recalibration to your sequence data
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx12g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+-T PrintReads \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-I "$seqId"_"$sampleId"_realigned.bam \
+-BQSR "$seqId"_"$sampleId"_recal_data.table \
+-o "$seqId"_"$sampleId".bam \
+-nct 12 \
+-dt NONE
 
 ### Variant calling ###
 
@@ -233,20 +216,12 @@ fi
 -T HaplotypeCaller \
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -I "$seqId"_"$sampleId".bam \
--L /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed \
--ip 100 \
 -o "$seqId"_"$sampleId".g.vcf \
 --genotyping_mode DISCOVERY \
 --emitRefConfidence GVCF \
 -dt NONE
 
 ### QC ###
-
-#Convert BED to interval_list for later
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar BedToIntervalList \
-I=/data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed \
-O="$panel"_ROI.interval_list \
-SD=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.dict 
 
 #Alignment metrics: library sequence similarity
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar CollectAlignmentSummaryMetrics \
@@ -264,27 +239,16 @@ H="$seqId"_"$sampleId"_InsertMetrics.pdf \
 MAX_RECORDS_IN_RAM=2000000 \
 TMP_DIR=/state/partition1/tmpdir
 
-#HsMetrics: capture & pooling performance
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar CollectHsMetrics \
-I="$seqId"_"$sampleId".bam \
-O="$seqId"_"$sampleId"_HsMetrics.txt \
-R=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
-BAIT_INTERVALS="$panel"_ROI.interval_list \
-TARGET_INTERVALS="$panel"_ROI.interval_list \
-MAX_RECORDS_IN_RAM=2000000 \
-TMP_DIR=/state/partition1/tmpdir
-
 #Generate per-base coverage: variant detection sensitivity
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx12g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T DepthOfCoverage \
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -o "$seqId"_"$sampleId"_DepthOfCoverage \
 -I "$seqId"_"$sampleId".bam \
--L /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed \
 --countType COUNT_FRAGMENTS \
 --minMappingQuality 20 \
 --minBaseQuality 10 \
--ct "$minimumCoverage" \
+-ct 20 \
 --omitIntervalStatistics \
 --omitLocusTable \
 -rf MappingQualityUnavailable \
@@ -296,46 +260,7 @@ awk -F'[\t|:]' '{if(NR>1) print $1"\t"$2"\t"$3}' "$seqId"_"$sampleId"_DepthOfCov
 /share/apps/htslib-distros/htslib-1.4/bgzip > "$seqId"_"$sampleId"_DepthOfCoverage.gz
 /share/apps/htslib-distros/htslib-1.4/tabix -b2 -e2 -s1 "$seqId"_"$sampleId"_DepthOfCoverage.gz
 
-#Make BED file of all genes overlapping ROI
-/share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools intersect -wa \
--a /state/partition1/db/human/refseq/ref_GRCh37.p13_top_level_canonical_b37_sorted.gff3.gz \
--b /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed | \
-awk '$2 ~ /RefSeq/ && $3 == "gene" { print $1"\t"$4-1"\t"$5 }' | \
-/share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools sort -faidx /data/db/human/gatk/2.8/b37/human_g1k_v37.fasta.fai | \
-/share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools merge > "$panel"_TargetGenes.bed
-
-#Intersect CDS for all genes, pad by p=n and merge coordinates by gene
-/share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools intersect \
--a /state/partition1/db/human/refseq/ref_GRCh37.p13_top_level_canonical_b37_sorted.gff3.gz \
--b "$panel"_TargetGenes.bed | \
-awk -F'[\t|;|=]' -v p=5 '$2 ~ /RefSeq/ && $3 == "CDS" { gene="null"; for (i=9;i<NF;i++) if ($i=="gene"){gene=$(i+1); break}; genes[gene] = genes[gene]$1"\t"($4-1)-p"\t"$5+p"\t"gene";" } END { for (gene in genes) print genes[gene] }' | \
-while read line; do
-    echo "$line" | \
-    tr ';' '\n' | \
-    /share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools merge -c 4 -o distinct;
-done | sort -k1,1V -k2,2n -k3,3n > "$panel"_ClinicalCoverageTargets.bed
-
-#Make PASS BED
-/share/apps/htslib-distros/htslib-1.4/tabix -R "$panel"_ClinicalCoverageTargets.bed \
-"$seqId"_"$sampleId"_DepthOfCoverage.gz | \
-awk -v minimumCoverage="$minimumCoverage" '$3 >= minimumCoverage { print $1"\t"$2-1"\t"$2 }' | \
-/share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools sort -faidx /data/db/human/gatk/2.8/b37/human_g1k_v37.fasta.fai | \
-/share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools merge > "$seqId"_"$sampleId"_PASS.bed
-
-#Calculate overlap between PASS BED and ClinicalCoverageTargets
-/share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools coverage \
--a "$panel"_ClinicalCoverageTargets.bed \
--b "$seqId"_"$sampleId"_PASS.bed | \
-tee "$seqId"_"$sampleId"_ClinicalCoverageTargetMetrics.txt | \
-awk '{pass[$4]+=$6; len[$4]+=$7} END { for(i in pass) printf "%s\t %.2f%\n", i, (pass[i]/len[i]) * 100 }' | \
-sort -k1,1 > "$seqId"_"$sampleId"_ClinicalCoverageGeneCoverage.txt
-
-#Make GAP BED
-/share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools subtract \
--a "$panel"_ClinicalCoverageTargets.bed \
--b "$seqId"_"$sampleId"_PASS.bed | \
-/share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools sort -faidx /data/db/human/gatk/2.8/b37/human_g1k_v37.fasta.fai \
-> "$seqId"_"$sampleId"_Gaps.bed
+exit
 
 #Extract 1kg autosomal snps for contamination analysis
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
