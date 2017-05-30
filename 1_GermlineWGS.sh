@@ -200,7 +200,7 @@ TMP_DIR=/state/partition1/tmpdir
 -dt NONE
 
 #Apply the recalibration to your sequence data
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \ 
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T PrintReads \
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -I "$seqId"_"$sampleId"_realigned.bam \
