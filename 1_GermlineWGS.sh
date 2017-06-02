@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -l walltime=999:00:00
+#PBS -l walltime=48:00:00
 #PBS -l ncpus=12
 set -euo pipefail
 PBS_O_WORKDIR=(`echo $PBS_O_WORKDIR | sed "s/^\/state\/partition1//" `)
@@ -298,6 +298,7 @@ awk '{pass[$4]+=$6; len[$4]+=$7} END { for(i in pass) printf "%s\t %.2f%\n", i, 
 sort -k1,1 > "$seqId"_"$sampleId"_ClinicalCoverageGeneCoverage.txt
 
 #Calculate dna contamination: sample-to-sample contamination
+#TODO check args
 /share/apps/verifyBamID-distros/verifyBamID_1.1.3/verifyBamID/bin/verifyBamID \
 --vcf /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.snps.high_confidence.b37.vcf \
 --bam "$seqId"_"$sampleId".bam \
