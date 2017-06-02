@@ -38,6 +38,7 @@ for fastqPair in $(ls *.fastq.gz | cut -d_ -f1-2 | sort | uniq); do
     read2Fastq=$(ls "$fastqPair"_2.fastq.gz)
 
     #trim adapters
+    #TODO reaplace trimming with SparkTrim tool?
     /share/apps/cutadapt-distros/cutadapt-1.9.1/bin/cutadapt \
     -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC \
     -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTA \
