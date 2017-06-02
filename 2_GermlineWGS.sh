@@ -148,5 +148,9 @@ annotateVCF(){
 -XL NC_007605 -XL hs37d5 -XL phix \
 -dt NONE
 
+#TODO genotype filtration?
+
+#TODO de novo
+
 #clean up
 #TODO
