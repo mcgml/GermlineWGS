@@ -151,6 +151,7 @@ TMP_DIR=/state/partition1/tmpdir
 -I "$seqId"_"$sampleId"_rmdup.bam \
 -o "$seqId"_"$sampleId"_realign.intervals \
 -nt 12 \
+-L WGS.bed \
 -dt NONE
 
 #Realign around indels
@@ -162,6 +163,7 @@ TMP_DIR=/state/partition1/tmpdir
 -targetIntervals "$seqId"_"$sampleId"_realign.intervals \
 -I "$seqId"_"$sampleId"_rmdup.bam \
 -o "$seqId"_"$sampleId"_realigned.bam \
+-L WGS.bed \
 -dt NONE
 
 #Analyse patterns of covariation in the sequence dataset
@@ -173,6 +175,7 @@ TMP_DIR=/state/partition1/tmpdir
 -knownSites /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
 -I "$seqId"_"$sampleId"_realigned.bam \
 -o "$seqId"_"$sampleId"_recal_data.table \
+-L 1 \
 -nct 12 \
 -dt NONE
 
@@ -186,6 +189,7 @@ TMP_DIR=/state/partition1/tmpdir
 -BQSR "$seqId"_"$sampleId"_recal_data.table \
 -I "$seqId"_"$sampleId"_realigned.bam \
 -o "$seqId"_"$sampleId"_post_recal_data.table \
+-L 1 \
 -nct 12 \
 -dt NONE
 
@@ -220,6 +224,7 @@ TMP_DIR=/state/partition1/tmpdir
 --genotyping_mode DISCOVERY \
 --emitRefConfidence GVCF \
 -nct 12 \
+-L WGS.bed \
 -dt NONE
 
 ### QC ###
@@ -254,6 +259,7 @@ TMP_DIR=/state/partition1/tmpdir
 --omitLocusTable \
 -rf MappingQualityUnavailable \
 -nt 12 \
+-L WGS.bed \
 -dt NONE
 
 #tabix index the per-base coverage file
