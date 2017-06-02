@@ -108,14 +108,14 @@ TMP_DIR=/state/partition1/tmpdir | \
 -M \
 -t 12 \
 -p \
-/state/partition1/db/human/mappers/b37/bwa/human_g1k_v37.fasta \
+/state/partition1/db/human/mappers/b37/bwa/human_g1k_v37_decoy_phix.fasta \
 /dev/stdin | \
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar MergeBamAlignment \
 EXPECTED_ORIENTATIONS=FR \
 ALIGNED_BAM=/dev/stdin \
 UNMAPPED_BAM="$seqId"_"$sampleId"_unaligned.bam \
 OUTPUT="$seqId"_"$sampleId"_aligned.bam \
-REFERENCE_SEQUENCE=/state/partition1/db/human/mappers/b37/bwa/human_g1k_v37.fasta \
+REFERENCE_SEQUENCE=/state/partition1/db/human/mappers/b37/bwa/human_g1k_v37_decoy_phix.fasta \
 PAIRED_RUN=true \
 SORT_ORDER="coordinate" \
 IS_BISULFITE_SEQUENCE=false \
@@ -145,7 +145,7 @@ TMP_DIR=/state/partition1/tmpdir
 #Identify regions requiring realignment
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx24g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T RealignerTargetCreator \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -known /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
 -known /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
 -I "$seqId"_"$sampleId"_rmdup.bam \
@@ -157,7 +157,7 @@ TMP_DIR=/state/partition1/tmpdir
 #Realign around indels
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T IndelRealigner \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -known /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
 -known /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
 -targetIntervals "$seqId"_"$sampleId"_realign.intervals \
@@ -169,7 +169,7 @@ TMP_DIR=/state/partition1/tmpdir
 #Analyse patterns of covariation in the sequence dataset
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx6g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T BaseRecalibrator \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -knownSites /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
 -knownSites /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
 -knownSites /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
@@ -182,7 +182,7 @@ TMP_DIR=/state/partition1/tmpdir
 #Do a second pass to analyze covariation remaining after recalibration
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx6g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T BaseRecalibrator \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -knownSites /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
 -knownSites /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
 -knownSites /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
@@ -196,7 +196,7 @@ TMP_DIR=/state/partition1/tmpdir
 #Generate BQSR plots
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx2g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T AnalyzeCovariates \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -before "$seqId"_"$sampleId"_recal_data.table \
 -after "$seqId"_"$sampleId"_post_recal_data.table \
 -plots "$seqId"_"$sampleId"_recalibration_plots.pdf \
@@ -206,7 +206,7 @@ TMP_DIR=/state/partition1/tmpdir
 #Apply the recalibration to your sequence data
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T PrintReads \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -I "$seqId"_"$sampleId"_realigned.bam \
 -BQSR "$seqId"_"$sampleId"_recal_data.table \
 -o "$seqId"_"$sampleId".bam \
@@ -218,7 +218,7 @@ TMP_DIR=/state/partition1/tmpdir
 #SNPs and Indels GVCF with Haplotypecaller
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx16g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T HaplotypeCaller \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -I "$seqId"_"$sampleId".bam \
 -o "$seqId"_"$sampleId".g.vcf \
 --genotyping_mode DISCOVERY \
@@ -231,7 +231,7 @@ TMP_DIR=/state/partition1/tmpdir
 
 #Alignment metrics: library sequence similarity
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar CollectAlignmentSummaryMetrics \
-R=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+R=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 I="$seqId"_"$sampleId".bam \
 O="$seqId"_"$sampleId"_AlignmentSummaryMetrics.txt \
 MAX_RECORDS_IN_RAM=2000000 \
@@ -248,7 +248,7 @@ TMP_DIR=/state/partition1/tmpdir
 #Generate per-base coverage: variant detection sensitivity
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx12g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T DepthOfCoverage \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -o "$seqId"_"$sampleId"_DepthOfCoverage \
 -I "$seqId"_"$sampleId".bam \
 --countType COUNT_FRAGMENTS \
@@ -271,7 +271,7 @@ exit
 
 #Extract 1kg autosomal snps for contamination analysis
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -T SelectVariants \
 --variant /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.snps.high_confidence.b37.vcf \
 -o 1kg_highconfidence_autosomal_ontarget_monoallelic_snps.vcf \
@@ -317,7 +317,7 @@ if [ $(wc -l Y.bed |cut -d' ' -f1) -gt 0 ] && [ $(awk -v meanOnTargetCoverage="$
     #calc Y coverage
     /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx12g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
     -T DepthOfCoverage \
-    -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+    -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
     -o "$seqId"_"$sampleId"_Y \
     --omitDepthOutputAtEachBase \
     --omitIntervalStatistics \

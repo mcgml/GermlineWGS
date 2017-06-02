@@ -64,11 +64,11 @@ annotateVCF(){
 makeCNVBed(){
     #make CNV target BED file - sort, merge, increase bins to min 160bp, remove extreme GC & poor mappability bins
     awk '{ if ($1 > 0 && $1 < 23) print $1"\t"$2"\t"$3 }' /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed | \
-    /share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools sort -faidx /data/db/human/gatk/2.8/b37/human_g1k_v37.fasta.fai | \
+    /share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools sort -faidx /data/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta.fai | \
     /share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools merge | \
     awk '{ len=$3-($2+1); if (len < 160) { slop=(160-len)/2; adjStart=$2-slop; adjEnd=$3+slop; printf "%s\t%.0f\t%.0f\n", $1,adjStart,adjEnd; } else {print $1"\t"$2"\t"$3} }' | \
     /share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools merge | \
-    /share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools nuc -fi /data/db/human/gatk/2.8/b37/human_g1k_v37.fasta -bed - | \
+    /share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools nuc -fi /data/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta -bed - | \
     awk '{ if ($5 >= 0.1 && $5 <= 0.9) print "chr"$1,$2,$3,$1"-"$2"-"$3 }' | tr ' ' '\t' > "$panel"_ROI_b37_window_gc.bed
     /share/apps/bigWigAverageOverBed-distros/bigWigAverageOverBed /data/db/human/wgEncodeMapability/wgEncodeCrgMapabilityAlign100mer.bigWig "$panel"_ROI_b37_window_gc.bed "$panel"_ROI_b37_window_gc_mappability.txt
     awk '{ if ($5 > 0.9 && $6 > 0.9) print $1"\ttarget_"NR }' "$panel"_ROI_b37_window_gc_mappability.txt | tr '-' '\t' > "$panel"_ROI_b37_CNV.bed
@@ -79,7 +79,7 @@ makeCNVBed(){
 #Joint genotyping
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx16g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T GenotypeGVCFs \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -V GVCFs.list \
 -L /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed \
 -ip 100 \
@@ -90,7 +90,7 @@ makeCNVBed(){
 #Select SNPs
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T SelectVariants \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -V "$seqId"_variants.vcf \
 -selectType SNP \
 -L /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed \
@@ -100,7 +100,7 @@ makeCNVBed(){
 #Filter SNPs
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T VariantFiltration \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -V "$seqId"_snps.vcf \
 --filterExpression "QUAL < 30.0" \
 --filterName "LowQual" \
@@ -126,7 +126,7 @@ makeCNVBed(){
 #Select non-snps (INDEL, MIXED, MNP, SYMBOLIC, NO_VARIATION)
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx16g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T SelectVariants \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -V "$seqId"_variants.vcf \
 --selectTypeToExclude SNP \
 -L /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed \
@@ -137,7 +137,7 @@ makeCNVBed(){
 #Filter non-snps (INDEL, MIXED, MNP, SYMBOLIC, NO_VARIATION)
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T VariantFiltration \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -V "$seqId"_non_snps.vcf \
 --filterExpression "QUAL < 30.0" \
 --filterName "LowQual" \
@@ -164,7 +164,7 @@ makeCNVBed(){
 #Combine filtered VCF files
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T CombineVariants \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 --variant "$seqId"_snps_filtered.vcf \
 --variant "$seqId"_non_snps_filtered.vcf \
 -o "$seqId"_combined_filtered.vcf \
@@ -189,7 +189,7 @@ done
 #Structural variant calling with Manta
 /share/apps/manta-distros/manta-1.1.0.centos5_x86_64/bin/configManta.py \
 $(sed 's/^/--bam /' HighCoverageBams.list | tr '\n' ' ') \
---referenceFasta /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+--referenceFasta /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 --exome \
 --runDir manta
 manta/runWorkflow.py \
@@ -209,7 +209,7 @@ makeCNVBed
 #call CNVs using read depth
 /share/apps/R-distros/R-3.3.1/bin/Rscript /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/ExomeDepth.R \
 -b HighCoverageBams.list \
--f /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-f /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -r "$panel"_ROI_b37_CNV.bed \
 2>&1 | tee ExomeDepth.log
 
