@@ -297,5 +297,17 @@ sort -k1,1V -k2,2n -k3,3n | \
 awk '{pass[$4]+=$6; len[$4]+=$7} END { for(i in pass) printf "%s\t %.2f%\n", i, (pass[i]/len[i]) * 100 }' | \
 sort -k1,1 > "$seqId"_"$sampleId"_ClinicalCoverageGeneCoverage.txt
 
+#Calculate dna contamination: sample-to-sample contamination
+/share/apps/verifyBamID-distros/verifyBamID_1.1.3/verifyBamID/bin/verifyBamID \
+--vcf /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.snps.high_confidence.b37.vcf \
+--bam "$seqId"_"$sampleId".bam \
+--out "$seqId"_"$sampleId"_Contamination \
+--verbose \
+--ignoreRG \
+--chip-none \
+--minMapQ 20 \
+--maxDepth 50 \
+--precise
+
 #clean up
 #TODO
