@@ -271,5 +271,31 @@ awk -F'[\t|:]' '{if(NR>1) print $1"\t"$2"\t"$3}' "$seqId"_"$sampleId"_DepthOfCov
 /share/apps/htslib-distros/htslib-1.4/bgzip > "$seqId"_"$sampleId"_DepthOfCoverage.gz
 /share/apps/htslib-distros/htslib-1.4/tabix -b2 -e2 -s1 "$seqId"_"$sampleId"_DepthOfCoverage.gz
 
+#calculate CDS coverage with padding
+zcat /state/partition1/db/human/refseq/ref_GRCh37.p13_top_level_canonical_b37_sorted.gff3.gz | \
+grep "NP_[0-9]*\.[0-9]*" | \
+awk -F'[\t|;|=]' -v p=5 '$3 == "CDS" { gene="null"; for (i=9;i<NF;i++) if ($i=="gene"){gene=$(i+1); break}; genes[gene] = genes[gene]$1"\t"($4-1)-p"\t"$5+p"\t"gene";" } END { for (gene in genes) print genes[gene] }' | \
+while read line; do
+    echo "$line" | \
+    tr ';' '\n'| \
+    sort -k1,1V -k2,2n -k3,3n | \
+    /share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools merge -c 4 -o distinct;
+done | \
+sort -k1,1V -k2,2n -k3,3n > "$panel"_ClinicalCoverageTargets.bed
+
+#Make PASS BED
+/share/apps/htslib-distros/htslib-1.4/tabix -R "$panel"_ClinicalCoverageTargets.bed \
+"$seqId"_"$sampleId"_DepthOfCoverage.gz | \
+awk -v '$3 >= 20 { print $1"\t"$2-1"\t"$2 }' | \
+sort -k1,1V -k2,2n -k3,3n | \
+/share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools merge > "$seqId"_"$sampleId"_PASS.bed
+
+#Calculate overlap between PASS BED and ClinicalCoverageTargets
+/share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools coverage \
+-a "$panel"_ClinicalCoverageTargets.bed \
+-b "$seqId"_"$sampleId"_PASS.bed | \
+awk '{pass[$4]+=$6; len[$4]+=$7} END { for(i in pass) printf "%s\t %.2f%\n", i, (pass[i]/len[i]) * 100 }' | \
+sort -k1,1 > "$seqId"_"$sampleId"_ClinicalCoverageGeneCoverage.txt
+
 #clean up
 #TODO
