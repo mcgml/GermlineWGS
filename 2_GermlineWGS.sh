@@ -83,8 +83,8 @@ annotateVCF(){
 -resource:omni,known=false,training=true,truth=true,prior=12.0 /state/partition1/db/human/gatk/2.8/b37/1000G_omni2.5.b37.vcf \
 -resource:1000G,known=false,training=true,truth=false,prior=10.0 /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.snps.high_confidence.b37.vcf \
 -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
--an QD \
 -an DP \
+-an QD \
 -an FS \
 -an SOR \
 -an MQ \
@@ -119,8 +119,8 @@ annotateVCF(){
 -input "$seqId"_recalibrated_snps_raw_indels.vcf \
 -resource:mills,known=false,training=true,truth=true,prior=12.0 /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
 -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
--an QD \
 -an DP \
+-an QD \
 -an FS \
 -an SOR \
 -an MQRankSum \
