@@ -309,5 +309,15 @@ sort -k1,1 > "$seqId"_"$sampleId"_ClinicalCoverageGeneCoverage.txt
 --maxDepth 50 \
 --precise
 
+#create final file lists
+find $PWD -name "$seqId"_"$sampleId".g.vcf >> ../GVCFs.list
+find $PWD -name "$seqId"_"$sampleId".bam >> ../BAMs.list
+
+#check if all VCFs are written
+if [ $(find .. -maxdepth 1 -mindepth 1 -type d | wc -l | sed 's/^[[:space:]]*//g') -eq $(sort ../GVCFs.list | uniq | wc -l | sed 's/^[[:space:]]*//g') ]; then
+    echo -e "seqId=$seqId\npanel=$panel" > ../variables
+    cp 2_GermlineWGS.sh .. && cd .. && qsub 2_GermlineWGS.sh
+fi
+
 #clean up
 #TODO
