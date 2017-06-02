@@ -61,237 +61,92 @@ annotateVCF(){
     /share/apps/igvtools-distros/igvtools_2.3.75/igvtools index "$2"
 }
 
-makeCNVBed(){
-    #make CNV target BED file - sort, merge, increase bins to min 160bp, remove extreme GC & poor mappability bins
-    awk '{ if ($1 > 0 && $1 < 23) print $1"\t"$2"\t"$3 }' /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed | \
-    /share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools sort -faidx /data/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta.fai | \
-    /share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools merge | \
-    awk '{ len=$3-($2+1); if (len < 160) { slop=(160-len)/2; adjStart=$2-slop; adjEnd=$3+slop; printf "%s\t%.0f\t%.0f\n", $1,adjStart,adjEnd; } else {print $1"\t"$2"\t"$3} }' | \
-    /share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools merge | \
-    /share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools nuc -fi /data/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta -bed - | \
-    awk '{ if ($5 >= 0.1 && $5 <= 0.9) print "chr"$1,$2,$3,$1"-"$2"-"$3 }' | tr ' ' '\t' > "$panel"_ROI_b37_window_gc.bed
-    /share/apps/bigWigAverageOverBed-distros/bigWigAverageOverBed /data/db/human/wgEncodeMapability/wgEncodeCrgMapabilityAlign100mer.bigWig "$panel"_ROI_b37_window_gc.bed "$panel"_ROI_b37_window_gc_mappability.txt
-    awk '{ if ($5 > 0.9 && $6 > 0.9) print $1"\ttarget_"NR }' "$panel"_ROI_b37_window_gc_mappability.txt | tr '-' '\t' > "$panel"_ROI_b37_CNV.bed
-}
-
 ### Joint variant calling and filtering ###
 
 #Joint genotyping
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx16g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx16g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
 -T GenotypeGVCFs \
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
 -V GVCFs.list \
--L /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed \
--ip 100 \
 -o "$seqId"_variants.vcf \
 -ped "$seqId"_pedigree.ped \
+-nt 12 \
+-XL NC_007605 -XL hs37d5 -XL phix \
 -dt NONE
 
-#Select SNPs
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
--T SelectVariants \
+#Build the SNP recalibration model
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+-T VariantRecalibrator \
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
--V "$seqId"_variants.vcf \
--selectType SNP \
--L /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed \
--o "$seqId"_snps.vcf \
+-input "$seqId"_variants.vcf \
+-resource:hapmap,known=false,training=true,truth=true,prior=15.0 /state/partition1/db/human/gatk/2.8/b37/hapmap_3.3.b37.vcf \
+-resource:omni,known=false,training=true,truth=true,prior=12.0 /state/partition1/db/human/gatk/2.8/b37/1000G_omni2.5.b37.vcf \
+-resource:1000G,known=false,training=true,truth=false,prior=10.0 /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.snps.high_confidence.b37.vcf \
+-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
+-an QD \
+-an DP \
+-an FS \
+-an SOR \
+-an MQ \
+-an MQRankSum \
+-an ReadPosRankSum \
+-an InbreedingCoeff \
+-mode SNP \
+-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \
+-recalFile "$seqId"_SNP.recal \
+-tranchesFile "$seqId"_SNP.tranches \
+-rscriptFile "$seqId"_SNP_plots.R \
+-XL NC_007605 -XL hs37d5 -XL phix \
 -dt NONE
 
-#Filter SNPs
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
--T VariantFiltration \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
--V "$seqId"_snps.vcf \
---filterExpression "QUAL < 30.0" \
---filterName "LowQual" \
---filterExpression "QD < 2.0" \
---filterName "QD" \
---filterExpression "FS > 60.0" \
---filterName "FS" \
---filterExpression "MQ < 40.0" \
---filterName "MQ" \
---filterExpression "MQRankSum < -12.5" \
---filterName "MQRankSum" \
---filterExpression "ReadPosRankSum < -8.0" \
---filterName "ReadPosRankSum" \
---genotypeFilterExpression "DP < 10" \
---genotypeFilterName "LowDP" \
---genotypeFilterExpression "GQ < 20" \
---genotypeFilterName "LowGQ" \
---setFilteredGtToNocall \
--L /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed \
--o "$seqId"_snps_filtered.vcf \
+#Apply the desired level of recalibration to the SNPs in the call set
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+-T ApplyRecalibration \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-input "$seqId"_variants.vcf \
+-mode SNP \
+--ts_filter_level 99.0 \
+-recalFile "$seqId"_SNP.recal \
+-tranchesFile "$seqId"_SNP.tranches \
+-o "$seqId"_recalibrated_snps_raw_indels.vcf \
+-XL NC_007605 -XL hs37d5 -XL phix \
 -dt NONE
 
-#Select non-snps (INDEL, MIXED, MNP, SYMBOLIC, NO_VARIATION)
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx16g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
--T SelectVariants \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
--V "$seqId"_variants.vcf \
---selectTypeToExclude SNP \
--L /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed \
--ip 100 \
--o "$seqId"_non_snps.vcf \
+#Build the Indel recalibration model
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+-T VariantRecalibrator \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-input "$seqId"_recalibrated_snps_raw_indels.vcf \
+-resource:mills,known=false,training=true,truth=true,prior=12.0 /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
+-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
+-an QD \
+-an DP \
+-an FS \
+-an SOR \
+-an MQRankSum \
+-an ReadPosRankSum \
+-an InbreedingCoeff \
+-mode INDEL \
+-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \
+--maxGaussians 4 \
+-recalFile "$seqId"_INDEL.recal \
+-tranchesFile "$seqId"_INDEL.tranches \
+-rscriptFile "$seqId"_INDEL_plots.R \
+-XL NC_007605 -XL hs37d5 -XL phix \
 -dt NONE
 
-#Filter non-snps (INDEL, MIXED, MNP, SYMBOLIC, NO_VARIATION)
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
--T VariantFiltration \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
--V "$seqId"_non_snps.vcf \
---filterExpression "QUAL < 30.0" \
---filterName "LowQual" \
---filterExpression "QD < 2.0" \
---filterName "QD" \
---filterExpression "FS > 200.0" \
---filterName "FS" \
---filterExpression "SOR > 10.0" \
---filterName "SOR" \
---filterExpression "ReadPosRankSum < -20.0" \
---filterName "ReadPosRankSum" \
---filterExpression "InbreedingCoeff != 'NaN' && InbreedingCoeff < -0.8" \
---filterName "InbreedingCoeff" \
---genotypeFilterExpression "DP < 10" \
---genotypeFilterName "LowDP" \
---genotypeFilterExpression "GQ < 20" \
---genotypeFilterName "LowGQ" \
---setFilteredGtToNocall \
--L /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed \
--ip 100 \
--o "$seqId"_non_snps_filtered.vcf \
+#Apply the desired level of recalibration to the Indels in the call set
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+-T ApplyRecalibration \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-input "$seqId"_recalibrated_snps_raw_indels.vcf \
+-mode INDEL \
+--ts_filter_level 99.0 \
+-recalFile "$seqId"_INDEL.recal \
+-tranchesFile "$seqId"_INDEL.tranches \
+-o "$seqId"_recalibrated_variants.vcf \
+-XL NC_007605 -XL hs37d5 -XL phix \
 -dt NONE
 
-#Combine filtered VCF files
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
--T CombineVariants \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
---variant "$seqId"_snps_filtered.vcf \
---variant "$seqId"_non_snps_filtered.vcf \
--o "$seqId"_combined_filtered.vcf \
--genotypeMergeOptions UNSORTED \
--dt NONE
-
-#Add VCF meta data to final VCF
-addMetaDataToVCF "$seqId"_combined_filtered.vcf
-
-#bgzip vcf and index with tabix
-/share/apps/htslib-distros/htslib-1.4/bgzip -c "$seqId"_combined_filtered_meta.vcf > "$seqId"_combined_filtered_meta.vcf.gz
-/share/apps/htslib-distros/htslib-1.4/tabix -p vcf "$seqId"_combined_filtered_meta.vcf.gz
-
-### ROH, SV & CNV analysis ###
-
-#identify runs of homozygosity
-for sample in $(/share/apps/bcftools-distros/bcftools-1.4/bcftools query -l "$seqId"_combined_filtered_meta.vcf); do
-    /share/apps/bcftools-distros/bcftools-1.4/bcftools roh -O r -s "$sample" -R /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/"$panel"/"$panel"_ROI_b37.bed "$seqId"_combined_filtered_meta.vcf.gz | \
-    grep -v '^#' | awk '{print $3"\t"$4-1"\t"$5"\t\t"$8}' > "$sample"/"$seqId"_"$sample"_roh.bed
-done
-
-#Structural variant calling with Manta
-/share/apps/manta-distros/manta-1.1.0.centos5_x86_64/bin/configManta.py \
-$(sed 's/^/--bam /' HighCoverageBams.list | tr '\n' ' ') \
---referenceFasta /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
---exome \
---runDir manta
-manta/runWorkflow.py \
---quiet \
--m local \
--j 12
-
-#unzip VCF
-gzip -dc manta/results/variants/diploidSV.vcf.gz > "$seqId"_sv_filtered.vcf
-
-#Add VCF meta data to SV VCF
-addMetaDataToVCF "$seqId"_sv_filtered.vcf
-
-#make CNV target BED file
-makeCNVBed
-
-#call CNVs using read depth
-/share/apps/R-distros/R-3.3.1/bin/Rscript /data/diagnostics/pipelines/GermlineEnrichment/GermlineEnrichment-"$version"/ExomeDepth.R \
--b HighCoverageBams.list \
--f /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37_decoy_phix.fasta \
--r "$panel"_ROI_b37_CNV.bed \
-2>&1 | tee ExomeDepth.log
-
-#print ExomeDepth metrics
-echo -e "BamPath\tFragments\tCorrelation" > "$seqId"_ExomeDepth_Metrics.txt
-paste HighCoverageBams.list \
-<(grep "Number of counted fragments" ExomeDepth.log | cut -d' ' -f6) \
-<(grep "Correlation between reference and tests count" ExomeDepth.log | cut -d' ' -f8) >> "$seqId"_ExomeDepth_Metrics.txt
-
-### Annotation & Reporting ###
-
-#annotate CNV calls with number of het calls
-for vcf in $(ls *_cnv.vcf); do
-
-    prefix=$(echo "$vcf" | sed 's/\.vcf//g')
-    sampleId=$(/share/apps/bcftools-distros/bcftools-1.4/bcftools query -l "$vcf")
-
-    #add VCF headers
-    /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar UpdateVcfSequenceDictionary \
-    I="$vcf" \
-    O="$prefix"_header.vcf \
-    SD=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.dict
-
-    #add metadata, annotate & index
-    addMetaDataToVCF "$prefix"_header.vcf
-    annotateVCF "$prefix"_header_meta.vcf "$prefix"_meta_annotated.vcf
-
-    #write SNV & Indel dataset to table
-    /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -jar /data/diagnostics/apps/VCFParse/VCFParse-1.2.5/VCFParse.jar \
-    -V "$prefix"_meta_annotated.vcf \
-    -O "$seqId"_cnv \
-    -K
-
-    #move files to sampleId folder
-    mv "$prefix"_meta_annotated.vcf* "$sampleId"
-
-    #delete unused files
-    rm "$vcf" "$prefix"_header.vcf "$prefix"_header_meta.vcf    
-done
-
-#annotate with VEP
-annotateVCF "$seqId"_combined_filtered_meta.vcf "$seqId"_filtered_meta_annotated.vcf
-annotateVCF "$seqId"_sv_filtered_meta.vcf "$seqId"_sv_filtered_meta_annotated.vcf
-
-#write SNV & Indel dataset to table
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -jar /data/diagnostics/apps/VCFParse/VCFParse-1.2.5/VCFParse.jar \
--V "$seqId"_filtered_meta_annotated.vcf \
--O "$seqId"_snv-indel \
--K
-
-#write SV dataset to table
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -jar /data/diagnostics/apps/VCFParse/VCFParse-1.2.5/VCFParse.jar \
--V "$seqId"_sv_filtered_meta_annotated.vcf \
--O "$seqId"_sv \
--K
-
-#move variant reports to sampleId folder
-for i in $(ls *_VariantReport.txt);do
-    mv "$i" $(echo "$i" | sed 's/_VariantReport.txt//g' | sed 's/.*_//g')
-done
-
-### QC ###
-
-#relatedness test
-/share/apps/vcftools-distros/vcftools-0.1.14/build/bin/vcftools \
---relatedness2 \
---out "$seqId"_relatedness \
---vcf "$seqId"_filtered_meta_annotated.vcf
-
-#Variant Evaluation
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar CollectVariantCallingMetrics \
-INPUT="$seqId"_filtered_meta_annotated.vcf \
-OUTPUT="$seqId"_CollectVariantCallingMetrics.txt \
-DBSNP=/state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.excluding_sites_after_129.vcf \
-THREAD_COUNT=4
-
-### Clean up ###
-
-#delete unused files
-rm -r manta
-rm "$seqId"_variants.vcf "$seqId"_variants.vcf.idx "$panel"_ROI_b37_window_gc_mappability.txt  "$seqId"_combined_filtered_meta.vcf
-rm "$seqId"_snps.vcf "$seqId"_snps.vcf.idx "$seqId"_snps_filtered.vcf "$seqId"_snps_filtered.vcf.idx "$seqId"_non_snps.vcf igv.log
-rm "$seqId"_non_snps.vcf.idx "$seqId"_non_snps_filtered.vcf "$seqId"_non_snps_filtered.vcf.idx "$seqId"_combined_filtered_meta.vcf.gz
-rm ExomeDepth.log GVCFs.list HighCoverageBams.list "$seqId"_sv_filtered.vcf "$seqId"_combined_filtered.vcf.idx "$panel"_ROI_b37_window_gc.bed
-rm "$seqId"_sv_filtered_meta.vcf BAMs.list variables "$seqId"_combined_filtered.vcf "$seqId"_combined_filtered_meta.vcf.gz.tbi
+#clean up
+#TODO
