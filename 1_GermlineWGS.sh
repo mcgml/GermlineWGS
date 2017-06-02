@@ -132,7 +132,7 @@ INCLUDE_SECONDARY_ALIGNMENTS=true \
 CREATE_INDEX=true \
 TMP_DIR=/state/partition1/tmpdir
 
-if [ "$pcr" = true ];then
+if [ "$pcr" = true ]; then
     #Mark duplicate reads
     /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar MarkDuplicates \
     INPUT="$seqId"_"$sampleId"_aligned.bam \
