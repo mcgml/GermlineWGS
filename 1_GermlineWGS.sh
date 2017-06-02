@@ -231,6 +231,7 @@ fi
 --emitRefConfidence GVCF \
 -nct 12 \
 -XL NC_007605 -XL hs37d5 -XL phix \
+$(awk -vpcr="$pcr" 'BEGIN {if (pcr) print "-pcr_indel_model NONE"; else print "-pcr_indel_model CONSERVATIVE"}') \
 -dt NONE
 
 ### QC ###
