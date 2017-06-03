@@ -133,20 +133,16 @@ INCLUDE_SECONDARY_ALIGNMENTS=true \
 CREATE_INDEX=true \
 TMP_DIR=/state/partition1/tmpdir
 
-if [ "$pcr" = true ]; then
-    #Mark duplicate reads
-    /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar MarkDuplicates \
-    INPUT="$seqId"_"$sampleId"_aligned.bam \
-    OUTPUT="$seqId"_"$sampleId"_rmdup.bam \
-    METRICS_FILE="$seqId"_"$sampleId"_MarkDuplicatesMetrics.txt \
-    CREATE_INDEX=true \
-    MAX_RECORDS_IN_RAM=2000000 \
-    VALIDATION_STRINGENCY=SILENT \
-    TMP_DIR=/state/partition1/tmpdir
-else 
-    mv "$seqId"_"$sampleId"_aligned.bam "$seqId"_"$sampleId"_rmdup.bam
-    mv "$seqId"_"$sampleId"_aligned.bai "$seqId"_"$sampleId"_rmdup.bai
-fi
+#Mark duplicate reads
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar MarkDuplicates \
+INPUT="$seqId"_"$sampleId"_aligned.bam \
+OUTPUT="$seqId"_"$sampleId"_rmdup.bam \
+METRICS_FILE="$seqId"_"$sampleId"_MarkDuplicatesMetrics.txt \
+CREATE_INDEX=true \
+MAX_RECORDS_IN_RAM=2000000 \
+VALIDATION_STRINGENCY=SILENT \
+$(awk -vpatterned="$patterned" 'BEGIN {if (patterned) print "OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500"; else print "OPTICAL_DUPLICATE_PIXEL_DISTANCE=100"}') \
+TMP_DIR=/state/partition1/tmpdir
 
 #Identify regions requiring realignment
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx24g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
