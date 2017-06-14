@@ -153,7 +153,7 @@ TMP_DIR=/state/partition1/tmpdir
 -I "$seqId"_"$sampleId"_rmdup.bam \
 -o "$seqId"_"$sampleId"_realign.intervals \
 -nt 12 \
--XL NC_007605 -XL hs37d5 -XL phix \
+-L 1 -L 2 -L 3 -L 4 -L 5 -L 6 -L 7 -L 8 -L 9 -L 10 -L 11 -L 12 -L 13 -L 14 -L 15 -L 16 -L 17 -L 18 -L 19 -L 20 -L 21 -L 22 -L X -L Y -L MT \
 -dt NONE
 
 #Realign around indels
@@ -226,7 +226,7 @@ TMP_DIR=/state/partition1/tmpdir
 --genotyping_mode DISCOVERY \
 --emitRefConfidence GVCF \
 -nct 12 \
--XL NC_007605 -XL hs37d5 -XL phix \
+-L 1 -L 2 -L 3 -L 4 -L 5 -L 6 -L 7 -L 8 -L 9 -L 10 -L 11 -L 12 -L 13 -L 14 -L 15 -L 16 -L 17 -L 18 -L 19 -L 20 -L 21 -L 22 -L X -L Y -L MT \
 $(awk -vpcr="$pcr" 'BEGIN {if (pcr) print "-pcr_indel_model NONE"; else print "-pcr_indel_model CONSERVATIVE"}') \
 -dt NONE
 
@@ -261,8 +261,8 @@ TMP_DIR=/state/partition1/tmpdir
 --omitIntervalStatistics \
 --omitLocusTable \
 -rf MappingQualityUnavailable \
+-L 1 -L 2 -L 3 -L 4 -L 5 -L 6 -L 7 -L 8 -L 9 -L 10 -L 11 -L 12 -L 13 -L 14 -L 15 -L 16 -L 17 -L 18 -L 19 -L 20 -L 21 -L 22 -L X -L Y -L MT \
 -nt 12 \
--XL NC_007605 -XL hs37d5 -XL phix \
 -dt NONE
 
 #tabix index the per-base coverage file
