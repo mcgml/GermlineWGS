@@ -248,56 +248,13 @@ H="$seqId"_"$sampleId"_InsertMetrics.pdf \
 MAX_RECORDS_IN_RAM=2000000 \
 TMP_DIR=/state/partition1/tmpdir
 
-#Generate per-base coverage: variant detection sensitivity
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx12g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
--T DepthOfCoverage \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
--o "$seqId"_"$sampleId"_DepthOfCoverage \
--I "$seqId"_"$sampleId".bam \
---countType COUNT_FRAGMENTS \
---minMappingQuality 20 \
---minBaseQuality 10 \
--ct 20 \
---omitIntervalStatistics \
---omitLocusTable \
--rf MappingQualityUnavailable \
--L 1 -L 2 -L 3 -L 4 -L 5 -L 6 -L 7 -L 8 -L 9 -L 10 -L 11 -L 12 -L 13 -L 14 -L 15 -L 16 -L 17 -L 18 -L 19 -L 20 -L 21 -L 22 -L X -L Y -L MT \
--nt 12 \
--dt NONE
-
-#tabix index the per-base coverage file
-awk -F'[\t|:]' '{if(NR>1) print $1"\t"$2"\t"$3}' "$seqId"_"$sampleId"_DepthOfCoverage | \
-/share/apps/htslib-distros/htslib-1.4/bgzip > "$seqId"_"$sampleId"_DepthOfCoverage.gz
-/share/apps/htslib-distros/htslib-1.4/tabix -b2 -e2 -s1 "$seqId"_"$sampleId"_DepthOfCoverage.gz
-
-#calculate CDS coverage with padding
-zcat /state/partition1/db/human/refseq/ref_GRCh37.p13_top_level_canonical_b37_sorted.gff3.gz | \
-grep "NP_[0-9]*\.[0-9]*" | \
-awk -F'[\t|;|=]' -v p=5 '$3 == "CDS" { gene="null"; for (i=9;i<NF;i++) if ($i=="gene"){gene=$(i+1); break}; genes[gene] = genes[gene]$1"\t"($4-1)-p"\t"$5+p"\t"gene";" } END { for (gene in genes) print genes[gene] }' | \
-while read line; do
-    echo "$line" | \
-    tr ';' '\n'| \
-    sort -k1,1V -k2,2n -k3,3n | \
-    /share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools merge -c 4 -o distinct;
-done | \
-sort -k1,1V -k2,2n -k3,3n > "$panel"_ClinicalCoverageTargets.bed
-
-#Make PASS BED
-/share/apps/htslib-distros/htslib-1.4/tabix -R "$panel"_ClinicalCoverageTargets.bed \
-"$seqId"_"$sampleId"_DepthOfCoverage.gz | \
-awk -v '$3 >= 20 { print $1"\t"$2-1"\t"$2 }' | \
-sort -k1,1V -k2,2n -k3,3n | \
-/share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools merge > "$seqId"_"$sampleId"_PASS.bed
-
-#Calculate overlap between PASS BED and ClinicalCoverageTargets
-/share/apps/bedtools-distros/bedtools-2.26.0/bin/bedtools coverage \
--a "$panel"_ClinicalCoverageTargets.bed \
--b "$seqId"_"$sampleId"_PASS.bed | \
-awk '{pass[$4]+=$6; len[$4]+=$7} END { for(i in pass) printf "%s\t %.2f%\n", i, (pass[i]/len[i]) * 100 }' | \
-sort -k1,1 > "$seqId"_"$sampleId"_ClinicalCoverageGeneCoverage.txt
+#Coverage analysis
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar CollectWgsMetrics \
+I="$seqId"_"$sampleId".bam \
+O="$seqId"_"$sampleId"_WgsMetrics.txt \
+R=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta
 
 #Calculate dna contamination: sample-to-sample contamination
-#TODO check args
 /share/apps/verifyBamID-distros/verifyBamID_1.1.3/verifyBamID/bin/verifyBamID \
 --vcf /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.snps.high_confidence.b37.vcf \
 --bam "$seqId"_"$sampleId".bam \
