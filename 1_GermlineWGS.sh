@@ -230,6 +230,16 @@ TMP_DIR=/state/partition1/tmpdir
 $(awk -vpcr="$pcr" 'BEGIN {if (pcr) print "--pcr_indel_model CONSERVATIVE"; else print "--pcr_indel_model NONE"}') \
 -dt NONE
 
+#create final file lists
+find $PWD -name "$seqId"_"$sampleId".g.vcf >> ../GVCFs.list
+find $PWD -name "$seqId"_"$sampleId".bam >> ../BAMs.list
+
+#check if all VCFs are written
+if [ $(find .. -maxdepth 1 -mindepth 1 -type d | wc -l | sed 's/^[[:space:]]*//g') -eq $(sort ../GVCFs.list | uniq | wc -l | sed 's/^[[:space:]]*//g') ]; then
+    echo -e "seqId=$seqId\npanel=$panel" > ../variables
+    cp 2_GermlineWGS.sh .. && cd .. && qsub 2_GermlineWGS.sh
+fi
+
 ### QC ###
 
 #Alignment metrics: library sequence similarity
@@ -252,6 +262,8 @@ TMP_DIR=/state/partition1/tmpdir
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar CollectWgsMetrics \
 I="$seqId"_"$sampleId".bam \
 O="$seqId"_"$sampleId"_WgsMetrics.txt \
+MINIMUM_MAPPING_QUALITY=20 \
+MINIMUM_BASE_QUALITY=10 \
 R=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta
 
 #Calculate dna contamination: sample-to-sample contamination
@@ -266,16 +278,6 @@ R=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta
 --minMapQ 20 \
 --maxDepth 50 \
 --precise
-
-#create final file lists
-find $PWD -name "$seqId"_"$sampleId".g.vcf >> ../GVCFs.list
-find $PWD -name "$seqId"_"$sampleId".bam >> ../BAMs.list
-
-#check if all VCFs are written
-if [ $(find .. -maxdepth 1 -mindepth 1 -type d | wc -l | sed 's/^[[:space:]]*//g') -eq $(sort ../GVCFs.list | uniq | wc -l | sed 's/^[[:space:]]*//g') ]; then
-    echo -e "seqId=$seqId\npanel=$panel" > ../variables
-    cp 2_GermlineWGS.sh .. && cd .. && qsub 2_GermlineWGS.sh
-fi
 
 #clean up
 #TODO
