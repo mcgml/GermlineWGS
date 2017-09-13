@@ -145,7 +145,7 @@ $(awk -vpatterned="$patterned" 'BEGIN {if (patterned) print "OPTICAL_DUPLICATE_P
 TMP_DIR=/state/partition1/tmpdir
 
 #Identify regions requiring realignment
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx24g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx24g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
 -T RealignerTargetCreator \
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -known /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
@@ -157,7 +157,7 @@ TMP_DIR=/state/partition1/tmpdir
 -dt NONE
 
 #Realign around indels
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
 -T IndelRealigner \
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -LOD 0.4 \
@@ -169,7 +169,7 @@ TMP_DIR=/state/partition1/tmpdir
 -dt NONE
 
 #Analyse patterns of covariation in the sequence dataset
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx6g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx6g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
 -T BaseRecalibrator \
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -knownSites /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
@@ -182,7 +182,7 @@ TMP_DIR=/state/partition1/tmpdir
 -dt NONE
 
 #Do a second pass to analyze covariation remaining after recalibration
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx6g -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx6g -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
 -T BaseRecalibrator \
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -knownSites /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
@@ -196,7 +196,7 @@ TMP_DIR=/state/partition1/tmpdir
 -dt NONE
 
 #Generate BQSR plots
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx2g -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx2g -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
 -T AnalyzeCovariates \
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -before "$seqId"_"$sampleId"_recal_data.table \
@@ -206,7 +206,7 @@ TMP_DIR=/state/partition1/tmpdir
 -dt NONE
 
 #Apply the recalibration to your sequence data
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
 -T PrintReads \
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -I "$seqId"_"$sampleId"_realigned.bam \
@@ -218,7 +218,7 @@ TMP_DIR=/state/partition1/tmpdir
 ### Variant calling ###
 
 #SNPs and Indels GVCF with Haplotypecaller
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx32g -jar /share/apps/GATK-distros/GATK_3.7.0/GenomeAnalysisTK.jar \
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx32g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
 -T HaplotypeCaller \
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -I "$seqId"_"$sampleId".bam \
