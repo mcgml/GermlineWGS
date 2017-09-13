@@ -255,6 +255,7 @@ O="$seqId"_"$sampleId"_WgsMetrics.txt \
 R=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta
 
 #Calculate dna contamination: sample-to-sample contamination
+#TODO reduce ROI --too slow
 /share/apps/verifyBamID-distros/verifyBamID_1.1.3/verifyBamID/bin/verifyBamID \
 --vcf /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.snps.high_confidence.b37.vcf \
 --bam "$seqId"_"$sampleId".bam \
