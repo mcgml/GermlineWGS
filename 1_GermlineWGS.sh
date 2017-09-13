@@ -30,12 +30,12 @@ countQCFlagFails() {
 rawSequenceQuality=PASS
 
 #convert FASTQ to uBAM & add RGIDs
-for fastqPair in $(ls *.fastq.gz | cut -d_ -f1-2 | sort | uniq); do
+for fastqPair in $(ls "$sampleId"_S*.fastq.gz | cut -d_ -f1-3 | sort | uniq); do
 
     #parse fastq filenames
-    laneId=$(echo "$fastqPair" | cut -d_ -f2)
-    read1Fastq=$(ls "$fastqPair"_1.fastq.gz)
-    read2Fastq=$(ls "$fastqPair"_2.fastq.gz)
+    laneId=$(echo "$fastqPair" | cut -d_ -f3)
+    read1Fastq=$(ls "$fastqPair"_R1_*fastq.gz)
+    read2Fastq=$(ls "$fastqPair"_R2_*fastq.gz)
 
     #trim adapters
     #TODO reaplace trimming with SparkTrim tool?
