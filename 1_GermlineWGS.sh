@@ -160,7 +160,6 @@ TMP_DIR=/state/partition1/tmpdir
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
 -T IndelRealigner \
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
--LOD 0.4 \
 -known /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
 -known /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
 -targetIntervals "$seqId"_"$sampleId"_realign.intervals \
