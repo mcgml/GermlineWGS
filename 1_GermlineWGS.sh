@@ -153,7 +153,7 @@ TMP_DIR=/state/partition1/tmpdir
 -I "$seqId"_"$sampleId"_rmdup.bam \
 -o "$seqId"_"$sampleId"_realign.intervals \
 -nt 12 \
--L 1 -L 2 -L 3 -L 4 -L 5 -L 6 -L 7 -L 8 -L 9 -L 10 -L 11 -L 12 -L 13 -L 14 -L 15 -L 16 -L 17 -L 18 -L 19 -L 20 -L 21 -L 22 -L X -L Y -L MT \
+-L /data/diagnositcs/pipelines/GermlineWGS/GermlineWGS-"$version"/canonical_wgs.bed \
 -dt NONE
 
 #Realign around indels
@@ -177,7 +177,7 @@ TMP_DIR=/state/partition1/tmpdir
 -knownSites /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
 -I "$seqId"_"$sampleId"_realigned.bam \
 -o "$seqId"_"$sampleId"_recal_data.table \
--L 22 \
+-L /data/diagnositcs/pipelines/GermlineWGS/GermlineWGS-"$version"/canonical_wgs.bed \
 -nct 12 \
 -dt NONE
 
@@ -191,7 +191,7 @@ TMP_DIR=/state/partition1/tmpdir
 -BQSR "$seqId"_"$sampleId"_recal_data.table \
 -I "$seqId"_"$sampleId"_realigned.bam \
 -o "$seqId"_"$sampleId"_post_recal_data.table \
--L 22 \
+-L /data/diagnositcs/pipelines/GermlineWGS/GermlineWGS-"$version"/canonical_wgs.bed \
 -nct 12 \
 -dt NONE
 
@@ -226,7 +226,7 @@ TMP_DIR=/state/partition1/tmpdir
 --genotyping_mode DISCOVERY \
 --emitRefConfidence GVCF \
 -nct 12 \
--L 1 -L 2 -L 3 -L 4 -L 5 -L 6 -L 7 -L 8 -L 9 -L 10 -L 11 -L 12 -L 13 -L 14 -L 15 -L 16 -L 17 -L 18 -L 19 -L 20 -L 21 -L 22 -L X -L Y -L MT \
+-L /data/diagnositcs/pipelines/GermlineWGS/GermlineWGS-"$version"/canonical_wgs.bed \
 $(awk -vpcr="$pcr" 'BEGIN {if (pcr) print "--pcr_indel_model CONSERVATIVE"; else print "--pcr_indel_model NONE"}') \
 -dt NONE
 
