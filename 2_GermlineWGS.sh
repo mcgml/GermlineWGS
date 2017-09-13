@@ -145,7 +145,7 @@ annotateVCF(){
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -input "$seqId"_recalibrated_snps_raw_indels.vcf \
 -mode INDEL \
---ts_filter_level 99.0 \
+--ts_filter_level 99.9 \
 -recalFile "$seqId"_INDEL.recal \
 -tranchesFile "$seqId"_INDEL.tranches \
 -o "$seqId"_recalibrated_variants.vcf \
