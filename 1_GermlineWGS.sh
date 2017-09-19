@@ -144,29 +144,6 @@ VALIDATION_STRINGENCY=SILENT \
 $(awk -vpatterned="$patterned" 'BEGIN {if (patterned) print "OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500"; else print "OPTICAL_DUPLICATE_PIXEL_DISTANCE=100"}') \
 TMP_DIR=/state/partition1/tmpdir
 
-#Identify regions requiring realignment
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx24g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
--T RealignerTargetCreator \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
--known /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
--known /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
--I "$seqId"_"$sampleId"_rmdup.bam \
--o "$seqId"_"$sampleId"_realign.intervals \
--nt 12 \
--L /data/diagnositcs/pipelines/GermlineWGS/GermlineWGS-"$version"/canonical_wgs.bed \
--dt NONE
-
-#Realign around indels
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
--T IndelRealigner \
--R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
--known /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
--known /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
--targetIntervals "$seqId"_"$sampleId"_realign.intervals \
--I "$seqId"_"$sampleId"_rmdup.bam \
--o "$seqId"_"$sampleId"_realigned.bam \
--dt NONE
-
 #Analyse patterns of covariation in the sequence dataset
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx6g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
 -T BaseRecalibrator \
@@ -174,11 +151,10 @@ TMP_DIR=/state/partition1/tmpdir
 -knownSites /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
 -knownSites /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
 -knownSites /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
--I "$seqId"_"$sampleId"_realigned.bam \
+-I "$seqId"_"$sampleId"_rmdup.bam \
 -o "$seqId"_"$sampleId"_recal_data.table \
--L /data/diagnositcs/pipelines/GermlineWGS/GermlineWGS-"$version"/canonical_wgs.bed \
--nct 12 \
--dt NONE
+-L 20 \
+-nct 12
 
 #Do a second pass to analyze covariation remaining after recalibration
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx6g -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
@@ -188,11 +164,10 @@ TMP_DIR=/state/partition1/tmpdir
 -knownSites /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
 -knownSites /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
 -BQSR "$seqId"_"$sampleId"_recal_data.table \
--I "$seqId"_"$sampleId"_realigned.bam \
+-I "$seqId"_"$sampleId"_rmdup.bam \
 -o "$seqId"_"$sampleId"_post_recal_data.table \
--L /data/diagnositcs/pipelines/GermlineWGS/GermlineWGS-"$version"/canonical_wgs.bed \
--nct 12 \
--dt NONE
+-L 20 \
+-nct 12
 
 #Generate BQSR plots
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx2g -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
@@ -201,18 +176,16 @@ TMP_DIR=/state/partition1/tmpdir
 -before "$seqId"_"$sampleId"_recal_data.table \
 -after "$seqId"_"$sampleId"_post_recal_data.table \
 -plots "$seqId"_"$sampleId"_recalibration_plots.pdf \
--csv "$seqId"_"$sampleId"_recalibration.csv \
--dt NONE
+-csv "$seqId"_"$sampleId"_recalibration.csv
 
 #Apply the recalibration to your sequence data
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
 -T PrintReads \
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
--I "$seqId"_"$sampleId"_realigned.bam \
+-I "$seqId"_"$sampleId"_rmdup.bam \
 -BQSR "$seqId"_"$sampleId"_recal_data.table \
 -o "$seqId"_"$sampleId".bam \
--nct 6 \
--dt NONE
+-nct 6
 
 ### Variant calling ###
 
@@ -225,9 +198,8 @@ TMP_DIR=/state/partition1/tmpdir
 --genotyping_mode DISCOVERY \
 --emitRefConfidence GVCF \
 -nct 12 \
--L /data/diagnositcs/pipelines/GermlineWGS/GermlineWGS-"$version"/canonical_wgs.bed \
 $(awk -vpcr="$pcr" 'BEGIN {if (pcr) print "--pcr_indel_model CONSERVATIVE"; else print "--pcr_indel_model NONE"}') \
--dt NONE
+-nct 12
 
 #create final file lists
 find $PWD -name "$seqId"_"$sampleId".g.vcf >> ../GVCFs.list
@@ -266,7 +238,6 @@ MINIMUM_BASE_QUALITY=10 \
 R=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta
 
 #Calculate dna contamination: sample-to-sample contamination
-#TODO reduce ROI --too slow
 /share/apps/verifyBamID-distros/verifyBamID_1.1.3/verifyBamID/bin/verifyBamID \
 --vcf /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.snps.high_confidence.b37.vcf \
 --bam "$seqId"_"$sampleId".bam \
@@ -275,8 +246,8 @@ R=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta
 --ignoreRG \
 --chip-none \
 --minMapQ 20 \
---maxDepth 50 \
+--maxDepth 65 \
 --precise
 
-#clean up
 #TODO
+#clean up

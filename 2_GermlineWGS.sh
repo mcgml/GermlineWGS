@@ -69,8 +69,7 @@ annotateVCF(){
 -V GVCFs.list \
 -o "$seqId"_variants.vcf \
 -ped "$seqId"_pedigree.ped \
--L /data/diagnositcs/pipelines/GermlineWGS/GermlineWGS-"$version"/canonical_wgs.bed \
--dt NONE
+-nt 12
 
 #Build the SNP recalibration model
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx8g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
@@ -94,10 +93,8 @@ annotateVCF(){
 -recalFile "$seqId"_SNP.recal \
 -tranchesFile "$seqId"_SNP.tranches \
 -rscriptFile "$seqId"_SNP_plots.R \
--L /data/diagnositcs/pipelines/GermlineWGS/GermlineWGS-"$version"/canonical_wgs.bed \
--nt 12 \
 -ped "$seqId"_pedigree.ped \
--dt NONE
+-nt 12
 
 #Apply the desired level of recalibration to the SNPs in the call set
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
@@ -105,14 +102,12 @@ annotateVCF(){
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -input "$seqId"_variants.vcf \
 -mode SNP \
---ts_filter_level 99.0 \
+--ts_filter_level 99.9 \
 -recalFile "$seqId"_SNP.recal \
 -tranchesFile "$seqId"_SNP.tranches \
 -o "$seqId"_recalibrated_snps_raw_indels.vcf \
--L /data/diagnositcs/pipelines/GermlineWGS/GermlineWGS-"$version"/canonical_wgs.bed \
--nt 12 \
 -ped "$seqId"_pedigree.ped \
--dt NONE
+-nt 12
 
 #Build the Indel recalibration model
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx8g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
@@ -134,10 +129,8 @@ annotateVCF(){
 -recalFile "$seqId"_INDEL.recal \
 -tranchesFile "$seqId"_INDEL.tranches \
 -rscriptFile "$seqId"_INDEL_plots.R \
--L /data/diagnositcs/pipelines/GermlineWGS/GermlineWGS-"$version"/canonical_wgs.bed \
--nt 12 \
 -ped "$seqId"_pedigree.ped \
--dt NONE
+-nt 12
 
 #Apply the desired level of recalibration to the Indels in the call set
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
@@ -149,14 +142,12 @@ annotateVCF(){
 -recalFile "$seqId"_INDEL.recal \
 -tranchesFile "$seqId"_INDEL.tranches \
 -o "$seqId"_recalibrated_variants.vcf \
--L /data/diagnositcs/pipelines/GermlineWGS/GermlineWGS-"$version"/canonical_wgs.bed \
--nt 12 \
 -ped "$seqId"_pedigree.ped \
--dt NONE
+-nt 12
 
 #TODO genotype filtration?
 
-#TODO de novo
+#TODO phase by transmission
 
 #clean up
 #TODO
