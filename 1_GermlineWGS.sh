@@ -11,6 +11,7 @@ cd $PBS_O_WORKDIR
 version="1.1.0"
 
 # Script 1 runs in sample folder, requires fastq files split by lane
+# Designed for a single germline WGS analysis from 1 lane of data ~ 120Gb
 
 #load sample & pipeline variables
 . *.variables
@@ -197,7 +198,6 @@ TMP_DIR=/state/partition1/tmpdir
 -o "$seqId"_"$sampleId".g.vcf \
 --genotyping_mode DISCOVERY \
 --emitRefConfidence GVCF \
--nct 12 \
 $(awk -vpcr="$pcr" 'BEGIN {if (pcr) print "--pcr_indel_model CONSERVATIVE"; else print "--pcr_indel_model NONE"}') \
 -nct 12
 
