@@ -66,7 +66,7 @@ for fastqPair in $(ls "$sampleId"_S*.fastq.gz | cut -d_ -f1-3 | sort | uniq); do
     LIBRARY_NAME="$worklistId"_"$sampleId" \
     PLATFORM_UNIT="$seqId"_"$laneId" \
     PLATFORM="ILLUMINA" \
-    SEQUENCING_CENTER="WTCHG" \
+    SEQUENCING_CENTER="$sequencingCentre" \
     SORT_ORDER=queryname \
     MAX_RECORDS_IN_RAM=2000000 \
     TMP_DIR=/state/partition1/tmpdir
