@@ -153,6 +153,7 @@ TMP_DIR=/state/partition1/tmpdir
 -known /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
 -I "$seqId"_"$sampleId"_rmdup.bam \
 -o "$seqId"_"$sampleId"_realign.intervals \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
 -nt 12
 
 #Realign around indels
@@ -163,6 +164,7 @@ TMP_DIR=/state/partition1/tmpdir
 -known /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
 -targetIntervals "$seqId"_"$sampleId"_realign.intervals \
 -I "$seqId"_"$sampleId"_rmdup.bam \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
 -o "$seqId"_"$sampleId"_realigned.bam
 
 #Analyse patterns of covariation in the sequence dataset
@@ -219,6 +221,7 @@ TMP_DIR=/state/partition1/tmpdir
 --genotyping_mode DISCOVERY \
 --emitRefConfidence GVCF \
 $(awk -vpcr="$pcr" 'BEGIN {if (pcr) print "--pcr_indel_model CONSERVATIVE"; else print "--pcr_indel_model NONE"}') \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
 -nct 12
 
 #create final file lists

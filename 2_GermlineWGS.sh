@@ -69,6 +69,7 @@ annotateVCF(){
 -V GVCFs.list \
 -o "$seqId"_variants.vcf \
 -ped "$seqId"_pedigree.ped \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
 -nt 12
 
 #Build the SNP recalibration model
@@ -94,6 +95,7 @@ annotateVCF(){
 -tranchesFile "$seqId"_SNP.tranches \
 -rscriptFile "$seqId"_SNP_plots.R \
 -ped "$seqId"_pedigree.ped \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
 -nt 12
 
 #Apply the desired level of recalibration to the SNPs in the call set
@@ -107,6 +109,7 @@ annotateVCF(){
 -tranchesFile "$seqId"_SNP.tranches \
 -o "$seqId"_recalibrated_snps_raw_indels.vcf \
 -ped "$seqId"_pedigree.ped \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
 -nt 12
 
 #Build the Indel recalibration model
@@ -130,6 +133,7 @@ annotateVCF(){
 -tranchesFile "$seqId"_INDEL.tranches \
 -rscriptFile "$seqId"_INDEL_plots.R \
 -ped "$seqId"_pedigree.ped \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
 -nt 12
 
 #Apply the desired level of recalibration to the Indels in the call set
@@ -143,6 +147,7 @@ annotateVCF(){
 -tranchesFile "$seqId"_INDEL.tranches \
 -o "$seqId"_recalibrated_variants.vcf \
 -ped "$seqId"_pedigree.ped \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
 -nt 12
 
 #TODO genotype filtration?
