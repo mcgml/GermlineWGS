@@ -281,5 +281,5 @@ if [ $(find .. -maxdepth 1 -mindepth 1 -type d | wc -l | sed 's/^[[:space:]]*//g
     cp 2_GermlineWGS.sh .. && cd .. && qsub 2_GermlineWGS.sh
 fi
 
+#delete unnecessary files
 #TODO
-#clean up
