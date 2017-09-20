@@ -255,14 +255,6 @@ H="$seqId"_"$sampleId"_InsertMetrics.pdf \
 MAX_RECORDS_IN_RAM=2000000 \
 TMP_DIR=/state/partition1/tmpdir
 
-#Coverage analysis
-/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar CollectWgsMetrics \
-I="$seqId"_"$sampleId".bam \
-O="$seqId"_"$sampleId"_WgsMetrics.txt \
-MINIMUM_MAPPING_QUALITY=20 \
-MINIMUM_BASE_QUALITY=10 \
-R=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta
-
 #Calculate dna contamination: sample-to-sample contamination
 /share/apps/verifyBamID-distros/verifyBamID_1.1.3/verifyBamID/bin/verifyBamID \
 --vcf /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.snps.high_confidence.b37.vcf \
@@ -274,6 +266,30 @@ R=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta
 --minMapQ 20 \
 --maxDepth 65 \
 --precise
+
+#Coverage analysis
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar CollectWgsMetrics \
+I="$seqId"_"$sampleId".bam \
+O="$seqId"_"$sampleId"_WgsMetrics.txt \
+MINIMUM_MAPPING_QUALITY=20 \
+MINIMUM_BASE_QUALITY=10 \
+R=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta
+
+#find callable regions
+/share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
+-T CallableLoci \
+--maxDepth 65 \
+--minDepth 10 \
+--minBaseQuality 10 \
+--minMappingQuality 20 \
+--format BED \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-I "$seqId"_"$sampleId".bam \
+-o "$seqId"_"$sampleId"_callable_status.bed \
+--summary "$seqId"_"$sampleId"_callable_status.txt \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
+-XL MT \
+-rf MappingQualityUnavailable
 
 #TODO
 #clean up
