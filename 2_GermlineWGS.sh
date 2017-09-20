@@ -70,6 +70,7 @@ annotateVCF(){
 -o "$seqId"_variants.vcf \
 -ped "$seqId"_pedigree.ped \
 -XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
+-XL MT \
 -nt 12
 
 #Build the SNP recalibration model
@@ -96,6 +97,7 @@ annotateVCF(){
 -rscriptFile "$seqId"_SNP_plots.R \
 -ped "$seqId"_pedigree.ped \
 -XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
+-XL MT \
 -nt 12
 
 #Apply the desired level of recalibration to the SNPs in the call set
@@ -110,6 +112,7 @@ annotateVCF(){
 -o "$seqId"_recalibrated_snps_raw_indels.vcf \
 -ped "$seqId"_pedigree.ped \
 -XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
+-XL MT \
 -nt 12
 
 #Build the Indel recalibration model
@@ -134,6 +137,7 @@ annotateVCF(){
 -rscriptFile "$seqId"_INDEL_plots.R \
 -ped "$seqId"_pedigree.ped \
 -XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
+-XL MT \
 -nt 12
 
 #Apply the desired level of recalibration to the Indels in the call set
@@ -148,6 +152,7 @@ annotateVCF(){
 -o "$seqId"_recalibrated_variants.vcf \
 -ped "$seqId"_pedigree.ped \
 -XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
+-XL MT \
 -nt 12
 
 #Apply only family priors to a callset
@@ -158,6 +163,7 @@ annotateVCF(){
 --skipPopulationPriors \
 -ped "$seqId"_pedigree.ped \
 -XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
+-XL MT \
 -o "$seqId"_recalibrated_variants_gcp.vcf
 
 #phase by transmission
@@ -169,6 +175,7 @@ annotateVCF(){
 -o "$seqId"_recalibrated_variants_gcp_phased.vcf \
 --DeNovoPrior 0.000001 \
 -XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
+-XL MT \
 -mvf "$seqId"_MendelianViolations.txt
 
 #filter genotypes
@@ -183,6 +190,7 @@ annotateVCF(){
 --genotypeFilterName "LowGQ" \
 --setFilteredGtToNocall \
 -XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
+-XL MT \
 -o "$seqId"_recalibrated_variants_gcp_phased_gtfiltered.vcf
 
 ### CNV & SV analysis ###
