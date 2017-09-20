@@ -145,6 +145,26 @@ VALIDATION_STRINGENCY=SILENT \
 $(awk -vpatterned="$patterned" 'BEGIN {if (patterned) print "OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500"; else print "OPTICAL_DUPLICATE_PIXEL_DISTANCE=100"}') \
 TMP_DIR=/state/partition1/tmpdir
 
+#Identify regions requiring realignment
+/share/apps/jre-distros/jre1.8.0_131/bin/java -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx24g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
+-T RealignerTargetCreator \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-known /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
+-known /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
+-I "$seqId"_"$sampleId"_rmdup.bam \
+-o "$seqId"_"$sampleId"_realign.intervals \
+-nt 12
+
+#Realign around indels
+/share/apps/jre-distros/jre1.8.0_131/bin/java -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
+-T IndelRealigner \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-known /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
+-known /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
+-targetIntervals "$seqId"_"$sampleId"_realign.intervals \
+-I "$seqId"_"$sampleId"_rmdup.bam \
+-o "$seqId"_"$sampleId"_realigned.bam
+
 #Analyse patterns of covariation in the sequence dataset
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx6g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
 -T BaseRecalibrator \
@@ -152,7 +172,7 @@ TMP_DIR=/state/partition1/tmpdir
 -knownSites /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
 -knownSites /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
 -knownSites /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
--I "$seqId"_"$sampleId"_rmdup.bam \
+-I "$seqId"_"$sampleId"_realigned.bam \
 -o "$seqId"_"$sampleId"_recal_data.table \
 -L 20 \
 -nct 12
@@ -165,7 +185,7 @@ TMP_DIR=/state/partition1/tmpdir
 -knownSites /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.indels.b37.vcf \
 -knownSites /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
 -BQSR "$seqId"_"$sampleId"_recal_data.table \
--I "$seqId"_"$sampleId"_rmdup.bam \
+-I "$seqId"_"$sampleId"_realigned.bam \
 -o "$seqId"_"$sampleId"_post_recal_data.table \
 -L 20 \
 -nct 12
@@ -183,7 +203,7 @@ TMP_DIR=/state/partition1/tmpdir
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx4g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
 -T PrintReads \
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
--I "$seqId"_"$sampleId"_rmdup.bam \
+-I "$seqId"_"$sampleId"_realigned.bam \
 -BQSR "$seqId"_"$sampleId"_recal_data.table \
 -o "$seqId"_"$sampleId".bam \
 -nct 6
