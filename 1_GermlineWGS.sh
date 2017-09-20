@@ -227,16 +227,6 @@ $(awk -vpcr="$pcr" 'BEGIN {if (pcr) print "--pcr_indel_model CONSERVATIVE"; else
 #mitochondrial variant analysis
 #TODO
 
-#create final file lists
-find $PWD -name "$seqId"_"$sampleId".g.vcf >> ../GVCFs.list
-find $PWD -name "$seqId"_"$sampleId".bam >> ../BAMs.list
-
-#check if all VCFs are written
-if [ $(find .. -maxdepth 1 -mindepth 1 -type d | wc -l | sed 's/^[[:space:]]*//g') -eq $(sort ../GVCFs.list | uniq | wc -l | sed 's/^[[:space:]]*//g') ]; then
-    echo -e "seqId=$seqId\npanel=$panel" > ../variables
-    cp 2_GermlineWGS.sh .. && cd .. && qsub 2_GermlineWGS.sh
-fi
-
 ### QC ###
 
 #Alignment metrics: library sequence similarity
@@ -254,18 +244,6 @@ O="$seqId"_"$sampleId"_InsertMetrics.txt \
 H="$seqId"_"$sampleId"_InsertMetrics.pdf \
 MAX_RECORDS_IN_RAM=2000000 \
 TMP_DIR=/state/partition1/tmpdir
-
-#Calculate dna contamination: sample-to-sample contamination
-/share/apps/verifyBamID-distros/verifyBamID_1.1.3/verifyBamID/bin/verifyBamID \
---vcf /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.snps.high_confidence.b37.vcf \
---bam "$seqId"_"$sampleId".bam \
---out "$seqId"_"$sampleId"_Contamination \
---verbose \
---ignoreRG \
---chip-none \
---minMapQ 20 \
---maxDepth 65 \
---precise
 
 #Coverage analysis
 /share/apps/jre-distros/jre1.8.0_101/bin/java -Djava.io.tmpdir=/state/partition1/tmpdir -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Xmx8g -jar /share/apps/picard-tools-distros/picard-tools-2.8.3/picard.jar CollectWgsMetrics \
@@ -290,6 +268,18 @@ R=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta
 -XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
 -XL MT \
 -rf MappingQualityUnavailable
+
+### Clean up ###
+
+#create final file lists
+find $PWD -name "$seqId"_"$sampleId".g.vcf >> ../GVCFs.list
+find $PWD -name "$seqId"_"$sampleId".bam >> ../BAMs.list
+
+#check if all VCFs are written
+if [ $(find .. -maxdepth 1 -mindepth 1 -type d | wc -l | sed 's/^[[:space:]]*//g') -eq $(sort ../GVCFs.list | uniq | wc -l | sed 's/^[[:space:]]*//g') ]; then
+    echo -e "seqId=$seqId\npanel=$panel" > ../variables
+    cp 2_GermlineWGS.sh .. && cd .. && qsub 2_GermlineWGS.sh
+fi
 
 #TODO
 #clean up
