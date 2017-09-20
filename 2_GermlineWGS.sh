@@ -150,9 +150,58 @@ annotateVCF(){
 -XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
 -nt 12
 
-#TODO genotype filtration?
+#Apply only family priors to a callset
+/share/apps/jre-distros/jre1.8.0_131/bin/java -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
+-T CalculateGenotypePosteriors \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-V "$seqId"_recalibrated_variants.vcf \
+--skipPopulationPriors \
+-ped "$seqId"_pedigree.ped \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
+-o "$seqId"_recalibrated_variants_gcp.vcf
 
-#TODO phase by transmission
+#phase by transmission
+/share/apps/jre-distros/jre1.8.0_131/bin/java -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
+-T PhaseByTransmission \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-V "$seqId"_recalibrated_variants_gcp.vcf \
+-ped "$seqId"_pedigree.ped \
+-o "$seqId"_recalibrated_variants_gcp_phased.vcf \
+--DeNovoPrior 0.000001 \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
+-mvf "$seqId"_MendelianViolations.txt
+
+#filter genotypes
+/share/apps/jre-distros/jre1.8.0_131/bin/java -XX:GCTimeLimit=50 -XX:GCHeapFreeLimit=10 -Djava.io.tmpdir=/state/partition1/tmpdir -Xmx4g -jar /share/apps/GATK-distros/GATK_3.8.0/GenomeAnalysisTK.jar \
+-T VariantFiltration \
+-R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+-V "$seqId"_recalibrated_variants_gcp_phased.vcf \
+-ped "$seqId"_pedigree.ped \
+--genotypeFilterExpression "DP < 10" \
+--genotypeFilterName "LowDP" \
+--genotypeFilterExpression "GQ < 20" \
+--genotypeFilterName "LowGQ" \
+--setFilteredGtToNocall \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
+-o "$seqId"_recalibrated_variants_gcp_phased_gtfiltered.vcf
+
+### CNV & SV analysis ###
+
+#TODO CNV calling
+
+#Structural variant calling with Manta
+/share/apps/manta-distros/manta-1.1.0.centos5_x86_64/bin/configManta.py \
+$(sed 's/^/--bam /' BAMs.list | tr '\n' ' ') \
+--referenceFasta /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
+--runDir manta
+manta/runWorkflow.py \
+--quiet \
+-m local \
+-j 12
+
+#soft link VCF
+ln -s manta/results/variants/diploidSV.vcf.gz "$seqId"_sv_filtered.vcf.gz
+ln -s manta/results/variants/diploidSV.vcf.gz.tbi "$seqId"_sv_filtered.vcf.gz.tbi
 
 #clean up
 #TODO
