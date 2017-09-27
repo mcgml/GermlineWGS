@@ -81,7 +81,7 @@ annotateVCF(){
 -resource:hapmap,known=false,training=true,truth=true,prior=15.0 /state/partition1/db/human/gatk/2.8/b37/hapmap_3.3.b37.vcf \
 -resource:omni,known=false,training=true,truth=true,prior=12.0 /state/partition1/db/human/gatk/2.8/b37/1000G_omni2.5.b37.vcf \
 -resource:1000G,known=false,training=true,truth=false,prior=10.0 /state/partition1/db/human/gatk/2.8/b37/1000G_phase1.snps.high_confidence.b37.vcf \
--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
+-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.excluding_sites_after_129.vcf \
 -an DP \
 -an QD \
 -an FS \
@@ -106,7 +106,7 @@ annotateVCF(){
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -input "$seqId"_variants.vcf \
 -mode SNP \
---ts_filter_level 99.9 \
+--ts_filter_level 99.5 \
 -recalFile "$seqId"_SNP.recal \
 -tranchesFile "$seqId"_SNP.tranches \
 -o "$seqId"_recalibrated_snps_raw_indels.vcf \
@@ -121,7 +121,7 @@ annotateVCF(){
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -input "$seqId"_recalibrated_snps_raw_indels.vcf \
 -resource:mills,known=false,training=true,truth=true,prior=12.0 /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
--resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.vcf \
+-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 /state/partition1/db/human/gatk/2.8/b37/dbsnp_138.b37.excluding_sites_after_129.vcf \
 -an DP \
 -an QD \
 -an FS \
@@ -146,7 +146,7 @@ annotateVCF(){
 -R /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
 -input "$seqId"_recalibrated_snps_raw_indels.vcf \
 -mode INDEL \
---ts_filter_level 99.9 \
+--ts_filter_level 99.5 \
 -recalFile "$seqId"_INDEL.recal \
 -tranchesFile "$seqId"_INDEL.tranches \
 -o "$seqId"_recalibrated_variants.vcf \
