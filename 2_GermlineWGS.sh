@@ -8,7 +8,7 @@ cd $PBS_O_WORKDIR
 #Description: Germline Enrichment Pipeline (Illumina paired-end). Not for use with other library preps/ experimental conditions.
 #Author: Matt Lyon, Harriet Jackson All Wales Medical Genetics Lab
 #Mode: BY_COHORT
-version="1.2.0"
+version="1.3.0"
 
 # Script 2 runs in panel folder, requires final Bams, gVCFs and a PED file
 # Variant filtering assumes non-related samples. If familiy structures are known they MUST be provided in the PED file
