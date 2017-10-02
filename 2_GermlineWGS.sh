@@ -69,8 +69,6 @@ annotateVCF(){
 -V GVCFs.list \
 -o "$seqId"_variants.vcf \
 -ped "$seqId"_pedigree.ped \
--XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
--XL MT \
 -nt 12
 
 #Build the SNP recalibration model
@@ -96,8 +94,6 @@ annotateVCF(){
 -tranchesFile "$seqId"_SNP.tranches \
 -rscriptFile "$seqId"_SNP_plots.R \
 -ped "$seqId"_pedigree.ped \
--XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
--XL MT \
 -nt 12
 
 #Apply the desired level of recalibration to the SNPs in the call set
@@ -111,8 +107,6 @@ annotateVCF(){
 -tranchesFile "$seqId"_SNP.tranches \
 -o "$seqId"_recalibrated_snps_raw_indels.vcf \
 -ped "$seqId"_pedigree.ped \
--XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
--XL MT \
 -nt 12
 
 #Build the Indel recalibration model
@@ -136,8 +130,6 @@ annotateVCF(){
 -tranchesFile "$seqId"_INDEL.tranches \
 -rscriptFile "$seqId"_INDEL_plots.R \
 -ped "$seqId"_pedigree.ped \
--XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
--XL MT \
 -nt 12
 
 #Apply the desired level of recalibration to the Indels in the call set
@@ -151,8 +143,6 @@ annotateVCF(){
 -tranchesFile "$seqId"_INDEL.tranches \
 -o "$seqId"_recalibrated_variants.vcf \
 -ped "$seqId"_pedigree.ped \
--XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
--XL MT \
 -nt 12
 
 #Apply only family priors to a callset
@@ -162,8 +152,6 @@ annotateVCF(){
 -V "$seqId"_recalibrated_variants.vcf \
 --skipPopulationPriors \
 -ped "$seqId"_pedigree.ped \
--XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
--XL MT \
 -o "$seqId"_recalibrated_variants_gcp.vcf
 
 #phase by transmission
@@ -174,8 +162,6 @@ annotateVCF(){
 -ped "$seqId"_pedigree.ped \
 -o "$seqId"_recalibrated_variants_gcp_phased.vcf \
 --DeNovoPrior 0.000001 \
--XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
--XL MT \
 -mvf "$seqId"_MendelianViolations.txt
 
 #filter genotypes
@@ -189,8 +175,6 @@ annotateVCF(){
 --genotypeFilterExpression "GQ < 20" \
 --genotypeFilterName "LowGQ" \
 --setFilteredGtToNocall \
--XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
--XL MT \
 -o "$seqId"_recalibrated_variants_gcp_phased_gtfiltered.vcf
 
 ### CNV & SV analysis ###

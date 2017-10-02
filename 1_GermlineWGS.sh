@@ -24,6 +24,22 @@ countQCFlagFails() {
     wc -l | \
     sed 's/^[[:space:]]*//g'
 }
+setOpticalDuplicatePixelDistance() {
+    #determine the pixel distance depending on the flowcell
+    if [ "$1" = "true" ]; then
+        echo -n "OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500"
+    else
+        echo -n "OPTICAL_DUPLICATE_PIXEL_DISTANCE=100"
+    fi
+}
+setPcrIndelModel(){
+    #determine the indel model depending on the library type
+    if [ "$1" = "true" ]; then
+        echo -n "--pcr_indel_model CONSERVATIVE"
+    else
+        echo -n "--pcr_indel_model NONE"
+    fi
+}
 
 ### Preprocessing ###
 
@@ -142,7 +158,7 @@ METRICS_FILE="$seqId"_"$sampleId"_MarkDuplicatesMetrics.txt \
 CREATE_INDEX=true \
 MAX_RECORDS_IN_RAM=2000000 \
 VALIDATION_STRINGENCY=SILENT \
-$(awk -vpatterned="$patterned" 'BEGIN {if (patterned) print "OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500"; else print "OPTICAL_DUPLICATE_PIXEL_DISTANCE=100"}') \
+$(setOpticalDuplicatePixelDistance "$patterned") \
 TMP_DIR=/state/partition1/tmpdir
 
 #Identify regions requiring realignment
@@ -153,7 +169,6 @@ TMP_DIR=/state/partition1/tmpdir
 -known /state/partition1/db/human/gatk/2.8/b37/Mills_and_1000G_gold_standard.indels.b37.vcf \
 -I "$seqId"_"$sampleId"_rmdup.bam \
 -o "$seqId"_"$sampleId"_realign.intervals \
--XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
 -nt 12
 
 #Realign around indels
@@ -219,13 +234,8 @@ TMP_DIR=/state/partition1/tmpdir
 -o "$seqId"_"$sampleId".g.vcf \
 --genotyping_mode DISCOVERY \
 --emitRefConfidence GVCF \
-$(awk -vpcr="$pcr" 'BEGIN {if (pcr) print "--pcr_indel_model CONSERVATIVE"; else print "--pcr_indel_model NONE"}') \
--XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
--XL MT \
+$(setPcrIndelModel "$pcr") \
 -nct 12
-
-#mitochondrial variant analysis
-#TODO
 
 ### QC ###
 
@@ -265,8 +275,6 @@ R=/state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta
 -I "$seqId"_"$sampleId".bam \
 -o "$seqId"_"$sampleId"_callable_status.bed \
 --summary "$seqId"_"$sampleId"_callable_status.txt \
--XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/blacklisted.bed \
--XL MT \
 -rf MappingQualityUnavailable
 
 ### Clean up ###
