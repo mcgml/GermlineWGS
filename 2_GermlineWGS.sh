@@ -69,6 +69,7 @@ annotateVCF(){
 -V GVCFs.list \
 -o "$seqId"_variants.vcf \
 -ped "$seqId"_pedigree.ped \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/not_callable.bed \
 -nt 12
 
 #Build the SNP recalibration model
@@ -94,6 +95,7 @@ annotateVCF(){
 -tranchesFile "$seqId"_SNP.tranches \
 -rscriptFile "$seqId"_SNP_plots.R \
 -ped "$seqId"_pedigree.ped \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/not_callable.bed \
 -nt 12
 
 #Apply the desired level of recalibration to the SNPs in the call set
@@ -107,6 +109,7 @@ annotateVCF(){
 -tranchesFile "$seqId"_SNP.tranches \
 -o "$seqId"_recalibrated_snps_raw_indels.vcf \
 -ped "$seqId"_pedigree.ped \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/not_callable.bed \
 -nt 12
 
 #Build the Indel recalibration model
@@ -143,6 +146,7 @@ annotateVCF(){
 -tranchesFile "$seqId"_INDEL.tranches \
 -o "$seqId"_recalibrated_variants.vcf \
 -ped "$seqId"_pedigree.ped \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/not_callable.bed \
 -nt 12
 
 #Apply only family priors to a callset
@@ -152,6 +156,7 @@ annotateVCF(){
 -V "$seqId"_recalibrated_variants.vcf \
 --skipPopulationPriors \
 -ped "$seqId"_pedigree.ped \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/not_callable.bed \
 -o "$seqId"_recalibrated_variants_gcp.vcf
 
 #phase by transmission
@@ -162,6 +167,7 @@ annotateVCF(){
 -ped "$seqId"_pedigree.ped \
 -o "$seqId"_recalibrated_variants_gcp_phased.vcf \
 --DeNovoPrior 0.000001 \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/not_callable.bed \
 -mvf "$seqId"_MendelianViolations.txt
 
 #filter genotypes
@@ -175,25 +181,8 @@ annotateVCF(){
 --genotypeFilterExpression "GQ < 20" \
 --genotypeFilterName "LowGQ" \
 --setFilteredGtToNocall \
+-XL /data/diagnostics/pipelines/GermlineWGS/GermlineWGS-"$version"/not_callable.bed \
 -o "$seqId"_recalibrated_variants_gcp_phased_gtfiltered.vcf
-
-### CNV & SV analysis ###
-
-#TODO CNV calling
-
-#Structural variant calling with Manta
-/share/apps/manta-distros/manta-1.1.0.centos5_x86_64/bin/configManta.py \
-$(sed 's/^/--bam /' BAMs.list | tr '\n' ' ') \
---referenceFasta /state/partition1/db/human/gatk/2.8/b37/human_g1k_v37.fasta \
---runDir manta
-manta/runWorkflow.py \
---quiet \
--m local \
--j 12
-
-#soft link VCF
-ln -s manta/results/variants/diploidSV.vcf.gz "$seqId"_sv_filtered.vcf.gz
-ln -s manta/results/variants/diploidSV.vcf.gz.tbi "$seqId"_sv_filtered.vcf.gz.tbi
 
 #clean up
 #TODO
